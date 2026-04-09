@@ -40,3 +40,6 @@ next-env.d.ts
 
 # 3D asset originals (keep only optimized)
 src/assets/models/raw/
+
+# Large GLB models (> 10MB) — download separately
+public/models/buildings/coop-complex.glb

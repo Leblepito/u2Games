@@ -2,17 +2,21 @@
 
 import { useRef } from "react";
 import { useFrame } from "@react-three/fiber";
+import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import { useKeyboard } from "@/hooks/useKeyboard";
 import { useGameStore } from "@/lib/store";
 
-const MOVE_SPEED = 4;
-const ROTATION_SPEED = 8;
-const BOUNDS = 20;
+const MOVE_SPEED = 5;
+const ROTATION_SPEED = 10;
+const BOUNDS = 22;
+
+useGLTF.preload("/models/roosters/aseel.glb");
 
 export default function PlayerRooster(): React.JSX.Element {
   const meshRef = useRef<THREE.Group>(null!);
   const keys = useKeyboard();
+  const { scene } = useGLTF("/models/roosters/aseel.glb");
 
   useFrame((_, delta) => {
     const phase = useGameStore.getState().phase;
@@ -21,11 +25,12 @@ export default function PlayerRooster(): React.JSX.Element {
     const mesh = meshRef.current;
     const k = keys.current;
 
-    const moveX = (k.left ? 1 : 0) - (k.right ? 1 : 0);
-    const moveZ = (k.forward ? -1 : 0) - (k.backward ? 1 : 0);
+    // W=forward(-Z), S=backward(+Z), A=left(-X), D=right(+X)
+    const moveX = (k.right ? 1 : 0) - (k.left ? 1 : 0);
+    const moveZ = (k.backward ? 1 : 0) - (k.forward ? 1 : 0);
 
     if (moveX !== 0 || moveZ !== 0) {
-      const targetAngle = Math.atan2(moveX, moveZ);
+      const targetAngle = Math.atan2(-moveX, -moveZ);
       mesh.rotation.y = THREE.MathUtils.lerp(
         mesh.rotation.y,
         targetAngle,
@@ -48,31 +53,12 @@ export default function PlayerRooster(): React.JSX.Element {
 
   return (
     <group ref={meshRef} position={[0, 0, 5]}>
-      {/* Body */}
-      <mesh position={[0, 0.4, 0]} castShadow>
-        <capsuleGeometry args={[0.2, 0.4, 8, 16]} />
-        <meshStandardMaterial color="#d4a574" />
-      </mesh>
-      {/* Head */}
-      <mesh position={[0, 0.9, 0.1]} castShadow>
-        <sphereGeometry args={[0.15, 16, 16]} />
-        <meshStandardMaterial color="#d4a574" />
-      </mesh>
-      {/* Comb */}
-      <mesh position={[0, 1.1, 0.1]}>
-        <boxGeometry args={[0.05, 0.15, 0.2]} />
-        <meshStandardMaterial color="#ff3333" />
-      </mesh>
-      {/* Beak */}
-      <mesh position={[0, 0.85, 0.25]}>
-        <coneGeometry args={[0.05, 0.12, 8]} />
-        <meshStandardMaterial color="#DAA520" />
-      </mesh>
-      {/* Tail feathers */}
-      <mesh position={[0, 0.6, -0.3]} rotation={[0.3, 0, 0]}>
-        <boxGeometry args={[0.05, 0.4, 0.1]} />
-        <meshStandardMaterial color="#2a1a0a" />
-      </mesh>
+      <primitive
+        object={scene.clone()}
+        scale={0.8}
+        rotation={[0, Math.PI, 0]}
+        castShadow
+      />
     </group>
   );
 }

@@ -2,9 +2,13 @@
 
 import { useRef } from "react";
 import { useFrame } from "@react-three/fiber";
+import { useGLTF, Html } from "@react-three/drei";
+import * as THREE from "three";
 import { useGameStore } from "@/lib/store";
 import type { NpcDef } from "@/game/world/npcData";
 import { useKeyboard } from "@/hooks/useKeyboard";
+
+useGLTF.preload("/models/roosters/shamo.glb");
 
 interface NpcCharacterProps {
   npc: NpcDef;
@@ -13,10 +17,15 @@ interface NpcCharacterProps {
 export default function NpcCharacter({ npc }: NpcCharacterProps): React.JSX.Element {
   const keys = useKeyboard();
   const wasInRange = useRef(false);
+  const inRangeRef = useRef(false);
+  const { scene } = useGLTF("/models/roosters/shamo.glb");
 
   useFrame(() => {
     const state = useGameStore.getState();
-    if (state.phase === "dialogue") return;
+    if (state.phase === "dialogue") {
+      inRangeRef.current = false;
+      return;
+    }
 
     const playerPos = state.playerPosition;
     const dx = playerPos[0] - npc.position[0];
@@ -24,6 +33,7 @@ export default function NpcCharacter({ npc }: NpcCharacterProps): React.JSX.Elem
     const dist = Math.sqrt(dx * dx + dz * dz);
 
     const inRange = dist < npc.interactionRadius;
+    inRangeRef.current = inRange;
 
     if (inRange && keys.current.interact && state.phase === "exploring") {
       state.openDialogue(npc.name, npc.dialogueLines);
@@ -35,28 +45,25 @@ export default function NpcCharacter({ npc }: NpcCharacterProps): React.JSX.Elem
 
   return (
     <group position={npc.position} rotation={[0, npc.rotation, 0]}>
-      {/* Body */}
-      <mesh position={[0, 0.5, 0]} castShadow>
-        <capsuleGeometry args={[0.25, 0.5, 8, 16]} />
-        <meshStandardMaterial color="#8B7355" />
-      </mesh>
-      {/* Head */}
-      <mesh position={[0, 1.1, 0]} castShadow>
-        <sphereGeometry args={[0.18, 16, 16]} />
-        <meshStandardMaterial color="#D2B48C" />
-      </mesh>
-      {/* Bamboo hat */}
-      <mesh position={[0, 1.35, 0]}>
-        <coneGeometry args={[0.35, 0.15, 16]} />
-        <meshStandardMaterial color="#C4A35A" />
-      </mesh>
-      {/* Interaction radius (debug) */}
-      {process.env.NODE_ENV === "development" && (
-        <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-          <ringGeometry args={[npc.interactionRadius - 0.05, npc.interactionRadius, 32]} />
-          <meshBasicMaterial color="#00ff88" transparent opacity={0.15} />
-        </mesh>
-      )}
+      {/* NPC rooster model (Shamo breed for Pa Noi's old rooster) */}
+      <primitive
+        object={scene.clone()}
+        scale={0.7}
+        castShadow
+      />
+
+      {/* NPC name label */}
+      <Html
+        position={[0, 2.2, 0]}
+        center
+        distanceFactor={10}
+        style={{ pointerEvents: "none" }}
+      >
+        <div className="bg-slate-900/80 backdrop-blur-sm border border-white/10 rounded-lg px-3 py-1 text-center whitespace-nowrap">
+          <span className="text-amber-400 text-xs font-bold">{npc.icon} {npc.name}</span>
+          <div className="text-slate-400 text-[10px]">Press E to talk</div>
+        </div>
+      </Html>
     </group>
   );
 }

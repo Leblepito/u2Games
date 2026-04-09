@@ -6,59 +6,73 @@ import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import { useKeyboard } from "@/hooks/useKeyboard";
 import { useGameStore } from "@/lib/store";
+import { useRoosterAnimation } from "./useRoosterAnimation";
 
 const MOVE_SPEED = 5;
 const ROTATION_SPEED = 10;
 const BOUNDS = 22;
 
-useGLTF.preload("/models/roosters/aseel.glb");
+useGLTF.preload("/models/roosters/aseel-rigged.glb");
 
 export default function PlayerRooster(): React.JSX.Element {
-  const meshRef = useRef<THREE.Group>(null!);
+  const posRef = useRef<THREE.Group>(null!);
   const keys = useKeyboard();
-  const { scene } = useGLTF("/models/roosters/aseel.glb");
+  const gltf = useGLTF("/models/roosters/aseel-rigged.glb");
+  const { group: animGroup, setAnimation } = useRoosterAnimation(gltf.animations, gltf.scene);
+  const wasMoving = useRef(false);
 
   useFrame((_, delta) => {
     const phase = useGameStore.getState().phase;
     if (phase !== "exploring") return;
 
-    const mesh = meshRef.current;
+    const pos = posRef.current;
     const k = keys.current;
 
-    // W=forward(-Z), S=backward(+Z), A=left(-X), D=right(+X)
     const moveX = (k.right ? 1 : 0) - (k.left ? 1 : 0);
     const moveZ = (k.backward ? 1 : 0) - (k.forward ? 1 : 0);
 
-    if (moveX !== 0 || moveZ !== 0) {
+    const isMoving = moveX !== 0 || moveZ !== 0;
+
+    // Animasyon state değiştir
+    if (isMoving && !wasMoving.current) {
+      setAnimation("walk");
+    } else if (!isMoving && wasMoving.current) {
+      setAnimation("idle");
+    }
+    wasMoving.current = isMoving;
+
+    if (isMoving) {
       const targetAngle = Math.atan2(-moveX, -moveZ);
-      mesh.rotation.y = THREE.MathUtils.lerp(
-        mesh.rotation.y,
+      pos.rotation.y = THREE.MathUtils.lerp(
+        pos.rotation.y,
         targetAngle,
         ROTATION_SPEED * delta
       );
 
-      mesh.position.x += moveX * MOVE_SPEED * delta;
-      mesh.position.z += moveZ * MOVE_SPEED * delta;
+      pos.position.x += moveX * MOVE_SPEED * delta;
+      pos.position.z += moveZ * MOVE_SPEED * delta;
 
-      mesh.position.x = THREE.MathUtils.clamp(mesh.position.x, -BOUNDS, BOUNDS);
-      mesh.position.z = THREE.MathUtils.clamp(mesh.position.z, -BOUNDS, BOUNDS);
+      pos.position.x = THREE.MathUtils.clamp(pos.position.x, -BOUNDS, BOUNDS);
+      pos.position.z = THREE.MathUtils.clamp(pos.position.z, -BOUNDS, BOUNDS);
 
       useGameStore.getState().setPlayerPosition([
-        mesh.position.x,
-        mesh.position.y,
-        mesh.position.z,
+        pos.position.x,
+        pos.position.y,
+        pos.position.z,
       ]);
     }
   });
 
   return (
-    <group ref={meshRef} position={[0, 0, 5]}>
-      <primitive
-        object={scene.clone()}
-        scale={0.8}
-        rotation={[0, Math.PI, 0]}
-        castShadow
-      />
+    <group ref={posRef} position={[0, 0, 5]}>
+      <group ref={animGroup}>
+        <primitive
+          object={gltf.scene}
+          scale={0.8}
+          rotation={[0, Math.PI, 0]}
+          castShadow
+        />
+      </group>
     </group>
   );
 }

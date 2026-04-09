@@ -3,12 +3,12 @@
 import { useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import { useGLTF, Html } from "@react-three/drei";
-import * as THREE from "three";
 import { useGameStore } from "@/lib/store";
 import type { NpcDef } from "@/game/world/npcData";
 import { useKeyboard } from "@/hooks/useKeyboard";
+import { useRoosterAnimation } from "./useRoosterAnimation";
 
-useGLTF.preload("/models/roosters/shamo.glb");
+useGLTF.preload("/models/roosters/shamo-rigged.glb");
 
 interface NpcCharacterProps {
   npc: NpcDef;
@@ -17,15 +17,12 @@ interface NpcCharacterProps {
 export default function NpcCharacter({ npc }: NpcCharacterProps): React.JSX.Element {
   const keys = useKeyboard();
   const wasInRange = useRef(false);
-  const inRangeRef = useRef(false);
-  const { scene } = useGLTF("/models/roosters/shamo.glb");
+  const gltf = useGLTF("/models/roosters/shamo-rigged.glb");
+  const { group: animGroup, setAnimation } = useRoosterAnimation(gltf.animations, gltf.scene);
 
   useFrame(() => {
     const state = useGameStore.getState();
-    if (state.phase === "dialogue") {
-      inRangeRef.current = false;
-      return;
-    }
+    if (state.phase === "dialogue") return;
 
     const playerPos = state.playerPosition;
     const dx = playerPos[0] - npc.position[0];
@@ -33,9 +30,9 @@ export default function NpcCharacter({ npc }: NpcCharacterProps): React.JSX.Elem
     const dist = Math.sqrt(dx * dx + dz * dz);
 
     const inRange = dist < npc.interactionRadius;
-    inRangeRef.current = inRange;
 
     if (inRange && keys.current.interact && state.phase === "exploring") {
+      setAnimation("interact");
       state.openDialogue(npc.name, npc.dialogueLines);
       keys.current.interact = false;
     }
@@ -45,14 +42,14 @@ export default function NpcCharacter({ npc }: NpcCharacterProps): React.JSX.Elem
 
   return (
     <group position={npc.position} rotation={[0, npc.rotation, 0]}>
-      {/* NPC rooster model (Shamo breed for Pa Noi's old rooster) */}
-      <primitive
-        object={scene.clone()}
-        scale={0.7}
-        castShadow
-      />
+      <group ref={animGroup}>
+        <primitive
+          object={gltf.scene}
+          scale={0.7}
+          castShadow
+        />
+      </group>
 
-      {/* NPC name label */}
       <Html
         position={[0, 2.2, 0]}
         center

@@ -1,7 +1,7 @@
 "use client";
 
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls, Environment, Stats } from "@react-three/drei";
+import { OrbitControls, Environment, StatsGl } from "@react-three/drei";
 import { Suspense } from "react";
 
 /**
@@ -35,7 +35,7 @@ export default function GameCanvas() {
           />
         </Suspense>
 
-        {process.env.NODE_ENV === "development" && <Stats />}
+        {process.env.NODE_ENV === "development" && <StatsGl />}
       </Canvas>
     </div>
   );

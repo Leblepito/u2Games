@@ -20,6 +20,10 @@ export interface GameState {
   roosterCoins: number;
   xp: number;
   level: number;
+  dialogueSpeaker: string;
+  dialogueLines: string[];
+  dialogueIndex: number;
+  playerPosition: [number, number, number];
 
   // Actions
   setPhase: (phase: GamePhase) => void;
@@ -27,18 +31,26 @@ export interface GameState {
   spendCoins: (amount: number) => boolean;
   addXP: (amount: number) => void;
   setChapter: (chapter: number) => void;
+  openDialogue: (speaker: string, lines: string[]) => void;
+  advanceDialogue: () => void;
+  closeDialogue: () => void;
+  setPlayerPosition: (pos: [number, number, number]) => void;
 }
 
 export const useGameStore = create<GameState>()(
   persist(
     (set, get) => ({
-      phase: "menu",
+      phase: "exploring",
       season: 1,
       currentChapter: 0,
       playerName: "",
       roosterCoins: 0,
       xp: 0,
       level: 1,
+      dialogueSpeaker: "",
+      dialogueLines: [],
+      dialogueIndex: 0,
+      playerPosition: [0, 0.5, 5],
 
       setPhase: (phase) => set({ phase }),
 
@@ -60,6 +72,23 @@ export const useGameStore = create<GameState>()(
         }),
 
       setChapter: (chapter) => set({ currentChapter: chapter }),
+
+      openDialogue: (speaker, lines) =>
+        set({ phase: "dialogue", dialogueSpeaker: speaker, dialogueLines: lines, dialogueIndex: 0 }),
+
+      advanceDialogue: () => {
+        const { dialogueIndex, dialogueLines } = get();
+        if (dialogueIndex < dialogueLines.length - 1) {
+          set({ dialogueIndex: dialogueIndex + 1 });
+        } else {
+          get().closeDialogue();
+        }
+      },
+
+      closeDialogue: () =>
+        set({ phase: "exploring", dialogueSpeaker: "", dialogueLines: [], dialogueIndex: 0 }),
+
+      setPlayerPosition: (pos) => set({ playerPosition: pos }),
     }),
     { name: "roosterverse-save" }
   )

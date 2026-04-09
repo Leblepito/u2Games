@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:claude.ai)",
+      "Read(//c/Users/utkuc/Downloads/files \\(5\\)/**)",
+      "Bash(GIT_DIR=\"/c/Users/utkuc/OneDrive/Masaüstü/Med-UI-Tra/u2Algo/.git\" git ls-tree -r HEAD --name-only)",
+      "Bash(grep -l \"story\\\\|world\\\\|character\\\\|narrative\\\\|quest\\\\|dialogue\" /c/Users/utkuc/OneDrive/Utku/system_prompts_leaks-main/system_prompts_leaks-main/*/*.md)",
+      "Bash(grep -l \"Three\\\\|WebGL\\\\|3D\\\\|Canvas\\\\|HTML5\" /c/Users/utkuc/OneDrive/Utku/system_prompts_leaks-main/system_prompts_leaks-main/*/*.md)",
+      "Bash(tar tzf:*)",
+      "Bash(tar xzf:*)",
+      "Bash(git init:*)",
+      "Bash(git branch:*)",
+      "Bash(git add:*)"
+    ]
+  }
+}

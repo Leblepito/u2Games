@@ -1,0 +1,49 @@
+@import "tailwindcss";
+
+:root {
+  --color-gold: #f59e0b;
+  --color-crimson: #dc2626;
+  --color-cyan: #22d3ee;
+  --color-emerald: #10b981;
+}
+
+body {
+  overflow-x: hidden;
+}
+
+/* Glass panels */
+.glass-panel {
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-card {
+  background: rgba(30, 41, 59, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Text gradient */
+.text-gradient {
+  background: linear-gradient(135deg, var(--color-cyan), var(--color-gold));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Canvas container */
+.r3f-canvas-container {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+}
+
+.ui-overlay {
+  position: relative;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.ui-overlay > * {
+  pointer-events: auto;
+}

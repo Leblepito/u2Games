@@ -1,24 +1,24 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import DialogueBox from "@/components/ui/DialogueBox";
+import GameHUD from "@/components/ui/GameHUD";
 
 const GameCanvas = dynamic(() => import("@/components/canvas/GameCanvas"), {
   ssr: false,
   loading: () => (
-    <div className="min-h-screen flex items-center justify-center">
+    <div className="min-h-screen flex items-center justify-center bg-slate-950">
       <p className="text-slate-400 animate-pulse">Loading RoosterVerse...</p>
     </div>
   ),
 });
 
-export default function PlayPage() {
+export default function PlayPage(): React.JSX.Element {
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-slate-950">
       <GameCanvas />
-      {/* UI overlay renders on top of Canvas */}
-      <div className="ui-overlay fixed inset-0">
-        {/* HUD, dialogue, menus will mount here */}
-      </div>
+      <GameHUD />
+      <DialogueBox />
     </div>
   );
 }

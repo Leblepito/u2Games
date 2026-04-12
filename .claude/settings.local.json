@@ -10,7 +10,32 @@
       "Bash(tar xzf:*)",
       "Bash(git init:*)",
       "Bash(git branch:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git remote:*)",
+      "Bash(git push:*)",
+      "Bash(npm install:*)",
+      "Bash(npm show:*)",
+      "Bash(tasklist)",
+      "Bash(taskkill //f //im node.exe)",
+      "Bash(grep -i \"meshy\\\\|0403133034\" '/c/Users/utkuc/Downloads'/*.glb)",
+      "Bash(cp \"/c/Users/utkuc/OneDrive/Masaüstü/Med-UI-Tra/u2Algo/frontend/public/models/rooster-world/roosters/aseel.glb\" \"/c/Users/utkuc/OneDrive/Masaüstü/Med-UI-Tra/u2Games/src/assets/models/aseel.glb\")",
+      "Bash(cp \"/c/Users/utkuc/OneDrive/Masaüstü/Med-UI-Tra/u2Algo/frontend/public/models/rooster-world/roosters/shamo.glb\" \"/c/Users/utkuc/OneDrive/Masaüstü/Med-UI-Tra/u2Games/src/assets/models/shamo.glb\")",
+      "Bash(find \"c:/Users/utkuc/OneDrive/Utku/system_prompts_leaks-main/system_prompts_leaks-main\" -type f -exec ls -lh {} \\\\;)",
+      "Bash(awk '{print $5, $NF}')",
+      "Bash(sed 's/.*\\\\.//')",
+      "Bash(node:*)",
+      "Bash(ls \"c:/Users/utkuc/Downloads/superagent_mcp_v2/output/patterns/\"*.md)",
+      "Bash(ls:*)",
+      "Bash(echo \"broken yaml ---\")",
+      "Bash(rm patterns/_test_broken.md)",
+      "Bash(where blender:*)",
+      "Read(//c/Program Files \\(x86\\)/**)",
+      "Bash('/c/Program Files/Blender Foundation/Blender 5.1/blender.exe' --background --python /c/Users/utkuc/OneDrive/Masaüstü/Med-UI-Tra/u2Games/scripts/blender/rig_and_export.py -- /c/Users/utkuc/OneDrive/Masaüstü/Med-UI-Tra/u2Games/public/models/roosters/aseel.glb /c/Users/utkuc/OneDrive/Masaüstü/Med-UI-Tra/u2Games/public/models/roosters/aseel-rigged.glb)",
+      "Bash('/c/Program Files/Blender Foundation/Blender 5.1/blender.exe' --background --python /c/Users/utkuc/OneDrive/Masaüstü/Med-UI-Tra/u2Games/scripts/blender/rig_and_export.py -- /c/Users/utkuc/OneDrive/Masaüstü/Med-UI-Tra/u2Games/public/models/roosters/shamo.glb /c/Users/utkuc/OneDrive/Masaüstü/Med-UI-Tra/u2Games/public/models/roosters/shamo-rigged.glb)",
+      "Skill(update-config)",
+      "Bash(npx next:*)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/play)"
     ]
   }
 }

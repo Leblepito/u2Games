@@ -11,13 +11,18 @@ interface CreateLobbyPayload {
   hostName: string;
 }
 
+let supabaseInstance: SupabaseClient | null = null;
+
 function getSupabase(): SupabaseClient | null {
+  if (supabaseInstance) return supabaseInstance;
+
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !anonKey) {
     return null;
   }
-  return createClient(url, anonKey);
+  supabaseInstance = createClient(url, anonKey);
+  return supabaseInstance;
 }
 
 export async function createLobby(payload: CreateLobbyPayload): Promise<LobbyRecord | null> {

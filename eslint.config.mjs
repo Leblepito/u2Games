@@ -21,6 +21,68 @@ const eslintConfig = [
   },
   ...compat.extends("next/core-web-vitals", "next/typescript"),
 
+  // FSD layer cone — see docs/specs/fsd-architecture.md.
+  // Lower layers must not import from higher layers. Order
+  // (low → high): shared → entities → features → widgets → app.
+  {
+    files: ["src/shared/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            { group: ["@/entities/*"], message: "FSD: shared/ may not import from entities/." },
+            { group: ["@/features/*"], message: "FSD: shared/ may not import from features/." },
+            { group: ["@/widgets/*"],  message: "FSD: shared/ may not import from widgets/." },
+            { group: ["@/app/*"],      message: "FSD: shared/ may not import from app/." },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ["src/entities/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            { group: ["@/features/*"], message: "FSD: entities/ may not import from features/." },
+            { group: ["@/widgets/*"],  message: "FSD: entities/ may not import from widgets/." },
+            { group: ["@/app/*"],      message: "FSD: entities/ may not import from app/." },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ["src/features/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            { group: ["@/widgets/*"],  message: "FSD: features/ may not import from widgets/." },
+            { group: ["@/app/*"],      message: "FSD: features/ may not import from app/." },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ["src/widgets/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            { group: ["@/app/*"], message: "FSD: widgets/ may not import from app/." },
+          ],
+        },
+      ],
+    },
+  },
+
   // R3F SSR safety: Canvas + the R3F runtime must NOT be imported
   // from `app/` or `pages/` (server-rendered) — they go through
   // `components/canvas/GameCanvas.tsx`, which is loaded via

@@ -2,7 +2,7 @@
 
 import { useRef } from "react";
 import { useFrame } from "@react-three/fiber";
-import { useGLTF } from "@react-three/drei";
+import { useGLTF, Detailed } from "@react-three/drei";
 import * as THREE from "three";
 import { useKeyboard } from "@/hooks/useKeyboard";
 import { useGameStore } from "@/lib/store";
@@ -66,12 +66,33 @@ export default function PlayerRooster(): React.JSX.Element {
   return (
     <group ref={posRef} position={[0, 0, 5]}>
       <group ref={animGroup}>
-        <primitive
-          object={gltf.scene}
-          scale={0.8}
-          rotation={[0, Math.PI, 0]}
-          castShadow
-        />
+        <Detailed distances={[0, 15, 30]}>
+          {/* High Detail */}
+          <primitive
+            object={gltf.scene}
+            scale={0.8}
+            rotation={[0, Math.PI, 0]}
+            castShadow
+          />
+
+          {/* Medium Detail — Simplified geometry proxy */}
+          <group scale={0.8} rotation={[0, Math.PI, 0]}>
+            <mesh position={[0, 0.4, 0]} castShadow>
+              <sphereGeometry args={[0.4, 8, 8]} />
+              <meshStandardMaterial color="#c0392b" />
+            </mesh>
+            <mesh position={[0, 0.7, 0.1]} castShadow>
+              <sphereGeometry args={[0.2, 6, 6]} />
+              <meshStandardMaterial color="#e67e22" />
+            </mesh>
+          </group>
+
+          {/* Low Detail — Sphere / Box */}
+          <mesh scale={0.8} position={[0, 0.4, 0]}>
+            <boxGeometry args={[0.5, 0.8, 0.5]} />
+            <meshStandardMaterial color="#c0392b" />
+          </mesh>
+        </Detailed>
       </group>
     </group>
   );

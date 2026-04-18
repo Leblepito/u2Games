@@ -1,0 +1,27 @@
+{
+  "mcpServers": {
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp@latest"],
+      "description": "Library documentation lookup for Next.js, React Three Fiber, Drei, Three.js, Zustand, XState"
+    },
+    "playwright": {
+      "command": "npx",
+      "args": ["-y", "@anthropic-ai/mcp-playwright"],
+      "description": "Browser automation for testing the React Three Fiber canvas and combat flows"
+    },
+    "sequential-thinking": {
+      "command": "npx",
+      "args": ["-y", "@anthropic-ai/mcp-sequential-thinking"],
+      "description": "Complex multi-step reasoning for game state machines and combat logic"
+    },
+    "meshy-api": {
+      "command": "python",
+      "args": ["/path/to/meshy_mcp/server.py"],
+      "env": {
+        "MESHY_API_KEY": "${MESHY_API_KEY}"
+      },
+      "description": "Direct API access to Meshy.ai for generating 3D models and textures programmatically"
+    }
+  }
+}

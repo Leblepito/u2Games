@@ -3,6 +3,7 @@ import { persist } from "zustand/middleware";
 
 export type GamePhase =
   | "menu"
+  | "lobby"
   | "exploring"
   | "dialogue"
   | "combat"
@@ -35,12 +36,13 @@ export interface GameState {
   advanceDialogue: () => void;
   closeDialogue: () => void;
   setPlayerPosition: (pos: [number, number, number]) => void;
+  enterFromLobby: (playerName: string) => void;
 }
 
 export const useGameStore = create<GameState>()(
   persist(
     (set, get) => ({
-      phase: "exploring",
+      phase: "lobby",
       season: 1,
       currentChapter: 0,
       playerName: "",
@@ -89,6 +91,9 @@ export const useGameStore = create<GameState>()(
         set({ phase: "exploring", dialogueSpeaker: "", dialogueLines: [], dialogueIndex: 0 }),
 
       setPlayerPosition: (pos) => set({ playerPosition: pos }),
+
+      enterFromLobby: (playerName) =>
+        set({ phase: "exploring", playerName }),
     }),
     { name: "roosterverse-save" }
   )

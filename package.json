@@ -11,7 +11,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "optimize-models": "find src/assets/models -name '*.glb' ! -name '*-transformed*' -exec npx gltfjsx {} --transform --types --shadows \\;"
+    "optimize-models": "node scripts/optimize-models.mjs"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.0",

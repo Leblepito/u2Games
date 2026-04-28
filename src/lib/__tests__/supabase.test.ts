@@ -23,9 +23,10 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  const env = process.env as Record<string, string | undefined>;
   for (const k of ENV_KEYS) {
-    if (originals[k] === undefined) delete process.env[k];
-    else process.env[k] = originals[k]!;
+    if (originals[k] === undefined) delete env[k];
+    else env[k] = originals[k]!;
   }
   _resetSupabaseClientForTests();
 });
@@ -64,7 +65,7 @@ describe("getSupabase", () => {
     delete process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
     delete process.env.VERCEL_ENV;
     delete process.env.NEXT_PUBLIC_VERCEL_ENV;
-    process.env.NODE_ENV = "development";
+    (process.env as Record<string, string | undefined>).NODE_ENV = "development";
 
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     const { getSupabase } = await import("@/lib/supabase");

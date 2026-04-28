@@ -77,3 +77,50 @@ git clone https://github.com/anthropics/courses.git
 - Quest rewards: RC + XP + items
 - Breeding: combine 2 roosters → new rooster (sellable)
 - Marketplace: player-to-player item/rooster trading
+
+## Three.js r176 Upgrade Checklist (eklendi 2026-04-21)
+
+Şu an `three@0.170`. r176'ya (veya daha yüksek) bump yapmadan önce aşağıdaki 4 taramayı yap; breaking değişiklikler:
+
+1. **LuminanceFormat / LuminanceAlphaFormat kaldırıldı** — `RedFormat` ile değiştir.
+   ```bash
+   rg -n "LuminanceFormat|LuminanceAlphaFormat" src/
+   ```
+2. **CapsuleGeometry param rename:** `length` → `height`. Tüm `new CapsuleGeometry(radius, length, ...)` çağrıları güncellenmeli.
+   ```bash
+   rg -n "CapsuleGeometry" src/
+   ```
+3. **ArrowHelper cylinder → cone geometry:** hedef geometri artık `ConeGeometry`. Custom shader / raycast parametreleri üstünde etkisi var mı kontrol et.
+   ```bash
+   rg -n "ArrowHelper" src/
+   ```
+4. **Package bump yalnızca yukarıdaki 3 taramada temiz sonuç alındıktan sonra:**
+   ```bash
+   npm install three@^0.176 @react-three/fiber@^9.5 @react-three/drei@latest
+   npm run typecheck && npm run build && npm run test
+   ```
+
+Rollback: `package.json` + `package-lock.json` git checkout.
+
+**Referans:** Three.js r171–r176 changelog, weekly-ai-evolution 2026-W17 raporu.
+
+### r177 cumulative ek (eklenen 2026-04-29 / W18)
+
+Three.js **r177** yayında. r176 → r177 cumulative değişiklikler — bump tek commit'te r170 → r177 hedefi:
+
+1. **`normalView` → `normalWorld` rename** (TSL — node materials). Custom node material kullanan shader varsa rename gerekiyor.
+   ```bash
+   rg -n "normalView" src/
+   ```
+2. **`castShadow` regression fix** — r176'da gelen regresyon r177'de düzeltildi. r176'yı atlayıp doğrudan r177'ye gitmek daha güvenli.
+3. **`dashOffset` / LineDashedMaterial fix** — kullanım varsa visual diff kontrol.
+4. **`maskNode` ve `shapeCircle()` introduce** — yeni API; mevcut kod etkilenmez.
+5. **`toJSON()` / `fromJSON()` methodları eklendi** — serialization akışları için yeni opsiyon (RoosterVerse save/load için potansiyel iyileşme).
+
+Bump komut güncellemesi (cumulative):
+```bash
+npm install three@^0.177 @types/three@^0.177 @react-three/fiber@^9.5 @react-three/drei@latest
+npm run typecheck && npm run build && npm run test
+```
+
+**Referans:** Three.js r176 → r177 migration guide (milestone 90), weekly-ai-evolution 2026-W18 raporu.

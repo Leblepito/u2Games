@@ -1,51 +1,60 @@
 # 🌐 API Routes Specification
 
-## Frontend Proxy (Vercel → Railway)
-`/api/game/*` rewrites to Railway backend.
+All backend runs as Next.js Serverless Functions on Vercel.
+No Railway. No FastAPI.
 
-## Auth (Supabase Direct)
-Handled by @supabase/supabase-js client-side.
+## Auth
+Handled by `@supabase/supabase-js` client-side + Supabase Auth.
 
-## Game API (Railway FastAPI)
+## Supabase Clients
+- **Server routes:** `import { createClient } from '@/lib/supabase/server'` (service role — bypasses RLS)
+- **React components:** `import { createClient } from '@/lib/supabase/client'` (anon key — respects RLS)
+
+## Routes
 
 ### Roosters
 ```
-GET    /api/roosters           → List user's roosters
+GET    /api/roosters           → List user's roosters (?user_id=)
 POST   /api/roosters           → Create rooster
-PATCH  /api/roosters/:id       → Update rooster
-DELETE /api/roosters/:id       → Delete rooster
+PATCH  /api/roosters/[id]      → Update rooster
+DELETE /api/roosters/[id]      → Delete rooster
 ```
 
 ### Battles
 ```
-POST   /api/battles/start      → Validate & start battle
-POST   /api/battles/result     → Submit result + server validation
-GET    /api/battles/history     → Battle history
+GET    /api/battles            → Battle history (?player_id=)
+POST   /api/battles            → Submit battle result (server validates + computes)
 ```
 
 ### Economy
 ```
-GET    /api/wallet              → Get RC balance
-POST   /api/wallet/bet          → Place arena bet
-POST   /api/wallet/claim        → Claim winnings
-POST   /api/breeding/start      → Start breeding (spend RC)
+GET    /api/wallet             → Get RC balance (?user_id=)
+POST   /api/breeding           → Breed two roosters (costs 200 RC)
 ```
 
 ### Marketplace
 ```
-GET    /api/marketplace         → List all items
-POST   /api/marketplace/list    → List item for sale
-POST   /api/marketplace/buy     → Buy item
-DELETE /api/marketplace/:id     → Cancel listing
+GET    /api/marketplace        → List all listed items
+POST   /api/marketplace        → List item for sale
+DELETE /api/marketplace/[id]   → Cancel listing
 ```
 
 ### Story
 ```
-GET    /api/story/progress      → Get story progress
-POST   /api/story/complete      → Complete chapter (server validates)
+GET    /api/story              → Get story progress (?user_id=)
+POST   /api/story              → Complete chapter (upserts progress)
 ```
 
 ### Leaderboard
 ```
-GET    /api/leaderboard         → Top players by wins/RC/level
+GET    /api/leaderboard        → Top 100 players (?sort=rooster_coins|xp|level)
+```
+
+## Supabase RPC Functions Required
+```sql
+-- increment_coins: atomic RC update
+CREATE OR REPLACE FUNCTION increment_coins(user_id UUID, amount INT)
+RETURNS void AS $$
+  UPDATE rv_users SET rooster_coins = rooster_coins + amount WHERE id = user_id;
+$$ LANGUAGE sql;
 ```

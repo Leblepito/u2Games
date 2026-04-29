@@ -43,3 +43,4 @@ src/assets/models/raw/
 
 # Large GLB models (> 10MB) — download separately
 public/models/buildings/coop-complex.glb
+.vercel

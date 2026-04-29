@@ -1,25 +1,47 @@
-import { dirname } from "path";
-import { fileURLToPath } from "url";
-import { FlatCompat } from "@eslint/eslintrc";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-});
+import nextPlugin from "@next/eslint-plugin-next";
+import tseslint from "typescript-eslint";
 
 const eslintConfig = [
-  { 
+  {
     ignores: [
       ".next/**",
       "node_modules/**",
       "dist/**",
       "out/**",
-      "next-env.d.ts"
-    ] 
+      "next-env.d.ts",
+      "src/generated/**",
+      "scripts/**",
+    ],
   },
-  ...compat.extends("next/core-web-vitals", "next/typescript"),
+
+  // TypeScript flat preset (recommended — type-checked değil, hızlı)
+  ...tseslint.configs.recommended,
+
+  // Underscore-prefixed args/vars = "intentional unused" (API stability için)
+  {
+    rules: {
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+          destructuredArrayIgnorePattern: "^_",
+        },
+      ],
+    },
+  },
+
+  // Next.js plugin — direkt flat config (FlatCompat YOK; circular JSON oluşmaz)
+  {
+    plugins: {
+      "@next/next": nextPlugin,
+    },
+    rules: {
+      ...nextPlugin.configs.recommended.rules,
+      ...nextPlugin.configs["core-web-vitals"].rules,
+    },
+  },
 
   // FSD layer cone — see docs/specs/fsd-architecture.md.
   // Lower layers must not import from higher layers. Order

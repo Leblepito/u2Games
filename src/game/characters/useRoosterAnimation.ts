@@ -19,7 +19,7 @@ const CROSSFADE_DURATION = 0.25; // saniye
  */
 export function useRoosterAnimation(
   animations: THREE.AnimationClip[],
-  scene: THREE.Object3D
+  _scene: THREE.Object3D  // ileride bone/material erişimi için API'de tutuldu
 ): {
   group: React.RefObject<THREE.Group | null>;
   setAnimation: (state: RoosterState) => void;

@@ -2,16 +2,18 @@
 
 import { useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
-import { useGLTF, Sky, Text } from "@react-three/drei";
+import { useGLTF, Sky, Text, Detailed } from "@react-three/drei";
 import * as THREE from "three";
 import PlayerRooster from "@/game/characters/PlayerRooster";
 import NpcCharacter from "@/game/characters/NpcCharacter";
 import { KANCHANABURI_NPCS } from "@/game/world/npcData";
 import { useGameStore } from "@/lib/store";
 
+// KTX2 / BasisU texture compression could be handled by a custom GLTFLoader setup
+// but useGLTF typically handles it if the model has compressed textures.
 useGLTF.preload("/models/buildings/coop-complex.glb");
 
-/** Coop complex — Meshy.ai 3D model */
+/** Coop complex — Meshy.ai 3D model with LOD */
 function CoopComplex(): React.JSX.Element {
   const { scene } = useGLTF("/models/buildings/coop-complex.glb");
 
@@ -25,12 +27,28 @@ function CoopComplex(): React.JSX.Element {
   });
 
   return (
-    <primitive
-      object={cloned}
-      position={[-8, 0, -5]}
-      scale={2}
-      rotation={[0, 0.4, 0]}
-    />
+    <Detailed distances={[0, 40, 80]} position={[-8, 0, -5]} rotation={[0, 0.4, 0]}>
+      {/* High Detail — GLTF Model */}
+      <primitive object={cloned} scale={2} />
+
+      {/* Medium Detail — Simplified Group or Lower Poly Model (Proxy) */}
+      <group scale={2}>
+        <mesh position={[0, 1, 0]} castShadow receiveShadow>
+          <boxGeometry args={[2, 2, 3]} />
+          <meshStandardMaterial color="#8b7355" />
+        </mesh>
+        <mesh position={[0, 2, 0]} castShadow receiveShadow>
+          <coneGeometry args={[2.5, 1, 4]} />
+          <meshStandardMaterial color="#5c4033" />
+        </mesh>
+      </group>
+
+      {/* Low Detail — Simple Prism / Box */}
+      <mesh scale={2} position={[0, 1.5, 0]}>
+        <boxGeometry args={[2.5, 3, 3.5]} />
+        <meshStandardMaterial color="#5c4033" />
+      </mesh>
+    </Detailed>
   );
 }
 

@@ -1,7 +1,7 @@
 # 🌐 API Routes Specification
 
-All backend runs as Next.js Serverless Functions on Vercel.
-No Railway. No FastAPI.
+All backend runs as Next.js route handlers (`src/app/api/**`), deployed with the app on Railway.
+No separate FastAPI service.
 
 ## Auth
 Handled by `@supabase/supabase-js` client-side + Supabase Auth.

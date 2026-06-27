@@ -1,0 +1,15 @@
+#!/usr/bin/env sh
+# Pre-commit gate for u2games — keep it fast so devs don't bypass.
+#
+# 1. Lint+autofix only the files actually staged (lint-staged).
+# 2. Type-check the whole project (cheap with incremental tsc).
+# 3. Run the unit test suite — keep individual tests under ~50ms.
+#
+# Skip this hook in true emergencies with `git commit --no-verify`,
+# but please open a follow-up to fix whatever made you reach for it.
+
+set -e
+
+npx --no-install lint-staged
+npx --no-install tsc --noEmit
+npx --no-install vitest run --reporter=dot

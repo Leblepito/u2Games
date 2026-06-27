@@ -10,7 +10,7 @@ You own server logic, database, API routes, and game systems.
 - `docs/specs/api-routes.md`
 
 ## Rules
-- **No Railway. No FastAPI.** Backend = Next.js API routes on Vercel
+- **No separate FastAPI service.** Backend = Next.js API routes, deployed with the app on Railway
 - Use `src/lib/supabase/server.ts` (service role key) in all API routes
 - Use `src/lib/supabase/client.ts` (anon key) only in React components
 - Row Level Security on all Supabase tables
@@ -26,4 +26,4 @@ You own server logic, database, API routes, and game systems.
 - Marketplace: player-to-player RC trades
 
 ## Stack
-Supabase (PostgreSQL, Auth, Realtime) + Vercel Serverless Functions
+Supabase (PostgreSQL, Auth, Realtime) + Next.js API route handlers (Railway)

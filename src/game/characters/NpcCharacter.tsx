@@ -2,7 +2,7 @@
 
 import { useRef } from "react";
 import { useFrame } from "@react-three/fiber";
-import { useGLTF, Html } from "@react-three/drei";
+import { useGLTF, Html, Detailed } from "@react-three/drei";
 import { useGameStore } from "@/lib/store";
 import type { NpcDef } from "@/game/world/npcData";
 import { useKeyboard } from "@/hooks/useKeyboard";
@@ -43,11 +43,32 @@ export default function NpcCharacter({ npc }: NpcCharacterProps): React.JSX.Elem
   return (
     <group position={npc.position} rotation={[0, npc.rotation, 0]}>
       <group ref={animGroup}>
-        <primitive
-          object={gltf.scene}
-          scale={0.7}
-          castShadow
-        />
+        <Detailed distances={[0, 15, 30]}>
+          {/* High Detail */}
+          <primitive
+            object={gltf.scene}
+            scale={0.7}
+            castShadow
+          />
+
+          {/* Medium Detail — Simplified geometry proxy */}
+          <group scale={0.7}>
+            <mesh position={[0, 0.4, 0]} castShadow>
+              <sphereGeometry args={[0.4, 8, 8]} />
+              <meshStandardMaterial color="#2980b9" />
+            </mesh>
+            <mesh position={[0, 0.7, 0.1]} castShadow>
+              <sphereGeometry args={[0.2, 6, 6]} />
+              <meshStandardMaterial color="#3498db" />
+            </mesh>
+          </group>
+
+          {/* Low Detail — Sphere / Box */}
+          <mesh scale={0.7} position={[0, 0.4, 0]}>
+            <boxGeometry args={[0.5, 0.8, 0.5]} />
+            <meshStandardMaterial color="#2980b9" />
+          </mesh>
+        </Detailed>
       </group>
 
       <Html

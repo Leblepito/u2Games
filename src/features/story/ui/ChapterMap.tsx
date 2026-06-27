@@ -27,6 +27,7 @@ function ChapterCard({ chapter }: { chapter: Chapter }): React.JSX.Element {
       difficulty: chapter.boss.difficulty,
       enemy: chapter.boss.fighter,
       chapterId: chapter.id,
+      unlocks: chapter.unlocks,
     });
     router.push("/battle");
   };

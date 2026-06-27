@@ -21,6 +21,8 @@ export interface GameState {
   roosterCoins: number;
   xp: number;
   level: number;
+  /** Move ids the player has earned (combat gates selection by this). */
+  unlockedMoves: string[];
   dialogueSpeaker: string;
   dialogueLines: string[];
   dialogueIndex: number;
@@ -31,6 +33,8 @@ export interface GameState {
   addCoins: (amount: number) => void;
   spendCoins: (amount: number) => boolean;
   addXP: (amount: number) => void;
+  /** Grant moves (deduped); clearing a chapter calls this with its unlocks. */
+  unlockMoves: (moves: string[]) => void;
   setChapter: (chapter: number) => void;
   openDialogue: (speaker: string, lines: string[]) => void;
   advanceDialogue: () => void;
@@ -49,6 +53,8 @@ export const useGameStore = create<GameState>()(
       roosterCoins: 0,
       xp: 0,
       level: 1,
+      // Starter moveset (the Ch0 basics) so the first fight is playable.
+      unlockedMoves: ["peck", "wing_strike", "dodge"],
       dialogueSpeaker: "",
       dialogueLines: [],
       dialogueIndex: 0,
@@ -72,6 +78,11 @@ export const useGameStore = create<GameState>()(
           const newLevel = Math.floor(newXP / 100) + 1;
           return { xp: newXP, level: newLevel };
         }),
+
+      unlockMoves: (moves) =>
+        set((s) => ({
+          unlockedMoves: [...new Set([...s.unlockedMoves, ...moves])],
+        })),
 
       setChapter: (chapter) => set({ currentChapter: chapter }),
 

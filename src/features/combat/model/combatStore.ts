@@ -11,17 +11,22 @@ import {
   startTurn,
 } from "../lib/combatEngine";
 import type { CombatPhase, Difficulty, Fighter, MoveId, Rng } from "../lib/types";
+import { entryCost, resolveVictoryReward, type RewardBreakdown } from "../lib/economy";
 import { combatMachine } from "./combatMachine";
 import { useGameStore } from "@/lib/store";
 
-export interface BattleReward {
-  coins: number;
-  xp: number;
-}
+export type BattleReward = RewardBreakdown;
 
 export interface StartBattleConfig {
   playerName?: string;
   difficulty?: Difficulty;
+  /** RoosterCoin staked on the match — spent at entry, returned 2× on a win. */
+  wager?: number;
+  /**
+   * Chapter whose boss this fight is. A win on the player's current chapter
+   * advances the campaign (story-progress write).
+   */
+  chapterId?: number;
   /** Override the player/enemy fighters (e.g. story bosses). */
   player?: Partial<Fighter>;
   enemy?: Partial<Fighter>;
@@ -33,20 +38,20 @@ interface CombatSlice {
   phase: CombatPhase;
   turn: number;
   difficulty: Difficulty;
+  /** RoosterCoin staked on the active match. */
+  wager: number;
+  /** Chapter this match resolves, or null for a free arena bout. */
+  chapterId: number | null;
   player: Fighter;
   enemy: Fighter;
   log: string[];
   reward: BattleReward | null;
+  /** Transient banner — e.g. "not enough RC" or "Chapter cleared". */
+  notice: string | null;
   startBattle: (config?: StartBattleConfig) => void;
   playerAction: (moveId: MoveId) => void;
   reset: () => void;
 }
-
-const REWARDS: Record<Difficulty, BattleReward> = {
-  easy: { coins: 50, xp: 25 },
-  normal: { coins: 100, xp: 50 },
-  hard: { coins: 200, xp: 100 },
-};
 
 const actor = createActor(combatMachine).start();
 
@@ -103,13 +108,28 @@ export const useCombatStore = create<CombatSlice>((set, get) => {
     phase: "idle",
     turn: 0,
     difficulty: "normal",
+    wager: 0,
+    chapterId: null,
     player: defaultPlayer(""),
     enemy: defaultEnemy(),
     log: [],
     reward: null,
+    notice: null,
 
     startBattle: (config = {}) => {
       const difficulty = config.difficulty ?? "normal";
+      const wager = Math.max(0, Math.floor(config.wager ?? 0));
+
+      // Pay to enter: the wager plus any difficulty fee leaves the wallet now.
+      // Insufficient funds abort the match without touching combat state.
+      const cost = entryCost(difficulty, wager);
+      if (cost > 0 && !useGameStore.getState().spendCoins(cost)) {
+        set({
+          notice: `Need ${cost} RC to enter — you have ${useGameStore.getState().roosterCoins}.`,
+        });
+        return;
+      }
+
       rng = config.rng ?? Math.random;
       const player = defaultPlayer(config.playerName ?? "", config.player);
       const enemy = defaultEnemy(config.enemy);
@@ -120,8 +140,15 @@ export const useCombatStore = create<CombatSlice>((set, get) => {
         player,
         enemy,
         difficulty,
+        wager,
+        chapterId: config.chapterId ?? null,
         reward: null,
-        log: [`Battle start — ${player.name} vs ${enemy.name}!`],
+        notice: null,
+        log: [
+          wager > 0
+            ? `Battle start — ${player.name} vs ${enemy.name}! Wager ${wager} RC.`
+            : `Battle start — ${player.name} vs ${enemy.name}!`,
+        ],
       });
     },
 
@@ -137,12 +164,22 @@ export const useCombatStore = create<CombatSlice>((set, get) => {
       log.push(pOut.result.message);
 
       if (isDefeated(pOut.defender)) {
-        const reward = REWARDS[state.difficulty];
-        useGameStore.getState().addCoins(reward.coins);
-        useGameStore.getState().addXP(reward.xp);
+        const reward = resolveVictoryReward(state.difficulty, state.wager);
+        const game = useGameStore.getState();
+        game.addCoins(reward.coins);
+        game.addXP(reward.xp);
         log.push(`${pOut.defender.name} is defeated! +${reward.coins} RC, +${reward.xp} XP.`);
+
+        // Story-progress write: clearing the current chapter's boss advances it.
+        let notice: string | null = null;
+        if (state.chapterId !== null && state.chapterId === game.currentChapter) {
+          game.setChapter(state.chapterId + 1);
+          notice = `Chapter ${state.chapterId} cleared.`;
+          log.push(notice);
+        }
+
         actor.send({ type: "WIN" });
-        set({ player: pOut.attacker, enemy: pOut.defender, log, reward });
+        set({ player: pOut.attacker, enemy: pOut.defender, log, reward, notice });
         return;
       }
 
@@ -156,6 +193,7 @@ export const useCombatStore = create<CombatSlice>((set, get) => {
 
       if (isDefeated(eOut.defender)) {
         log.push(`${eOut.defender.name} has fallen. Defeat.`);
+        if (state.wager > 0) log.push(`Wager of ${state.wager} RC forfeited.`);
         actor.send({ type: "LOSE" });
         set({ player: eOut.defender, enemy: eOut.attacker, log });
         return;
@@ -172,6 +210,9 @@ export const useCombatStore = create<CombatSlice>((set, get) => {
         enemy: defaultEnemy(),
         log: [],
         reward: null,
+        notice: null,
+        wager: 0,
+        chapterId: null,
         turn: 0,
       });
     },

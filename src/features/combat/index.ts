@@ -14,6 +14,13 @@ export {
   startTurn,
 } from "./lib/combatEngine";
 export { MOVES, MOVE_IDS } from "./lib/moves";
+export {
+  DIFFICULTY_REWARD,
+  HARD_MODE_ENTRY_FEE,
+  entryCost,
+  resolveVictoryReward,
+} from "./lib/economy";
+export type { RewardBreakdown } from "./lib/economy";
 export type {
   ActionResult,
   CombatPhase,

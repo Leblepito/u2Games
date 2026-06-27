@@ -8,6 +8,7 @@ export {
   canUseMove,
   chooseEnemyMove,
   computeDamage,
+  counterDamage,
   createFighter,
   isDefeated,
   lomMultiplier,

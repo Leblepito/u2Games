@@ -91,7 +91,7 @@ export const CHAPTERS: readonly Chapter[] = [
       fighter: { name: "Steel Wing", maxHp: 150, atk: 27, def: 13, speed: 12, lom: "earth" },
     },
     tradingLesson: "Risk Management",
-    unlocks: [],
+    unlocks: ["counter"],
   },
   {
     id: 6,
@@ -105,7 +105,7 @@ export const CHAPTERS: readonly Chapter[] = [
       fighter: { name: "The Monsoon", maxHp: 160, atk: 28, def: 14, speed: 15, lom: "water" },
     },
     tradingLesson: "Momentum Trading",
-    unlocks: [],
+    unlocks: ["heal"],
   },
   {
     id: 7,
@@ -119,7 +119,7 @@ export const CHAPTERS: readonly Chapter[] = [
       fighter: { name: "Chimera Alpha", maxHp: 175, atk: 30, def: 15, speed: 14, lom: "fire" },
     },
     tradingLesson: "Backtesting",
-    unlocks: [],
+    unlocks: ["shield"],
   },
   {
     id: 8,

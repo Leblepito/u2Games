@@ -1,3 +1,7 @@
+export { PartnerBattlePanel } from "./ui/PartnerBattlePanel";
+export { LomMeter } from "./ui/LomMeter";
+export { usePartnerStore } from "./model/partnerStore";
+export type { StartPartnerBattleConfig, PartnerReward } from "./model/partnerStore";
 export {
   SYNC_MIN,
   SYNC_MAX,

@@ -23,6 +23,8 @@ export interface GameState {
   level: number;
   /** Move ids the player has earned (combat gates selection by this). */
   unlockedMoves: string[];
+  /** Koh Sawan (S2) Keepers the player has beaten. */
+  defeatedKeepers: string[];
   dialogueSpeaker: string;
   dialogueLines: string[];
   dialogueIndex: number;
@@ -35,6 +37,8 @@ export interface GameState {
   addXP: (amount: number) => void;
   /** Grant moves (deduped); clearing a chapter calls this with its unlocks. */
   unlockMoves: (moves: string[]) => void;
+  /** Mark a Koh Sawan Keeper defeated (deduped). */
+  defeatKeeper: (id: string) => void;
   setChapter: (chapter: number) => void;
   openDialogue: (speaker: string, lines: string[]) => void;
   advanceDialogue: () => void;
@@ -55,6 +59,7 @@ export const useGameStore = create<GameState>()(
       level: 1,
       // Starter moveset (the Ch0 basics) so the first fight is playable.
       unlockedMoves: ["peck", "wing_strike", "dodge"],
+      defeatedKeepers: [],
       dialogueSpeaker: "",
       dialogueLines: [],
       dialogueIndex: 0,
@@ -82,6 +87,13 @@ export const useGameStore = create<GameState>()(
       unlockMoves: (moves) =>
         set((s) => ({
           unlockedMoves: [...new Set([...s.unlockedMoves, ...moves])],
+        })),
+
+      defeatKeeper: (id) =>
+        set((s) => ({
+          defeatedKeepers: s.defeatedKeepers.includes(id)
+            ? s.defeatedKeepers
+            : [...s.defeatedKeepers, id],
         })),
 
       setChapter: (chapter) => set({ currentChapter: chapter }),

@@ -114,6 +114,24 @@ describe("partnerStore", () => {
     expect(useGameStore.getState().roosterCoins).toBe(coinsBefore + 100);
   });
 
+  it("records a Keeper defeat on the island when the fight is won", async () => {
+    const { usePartnerStore } = await import("../partnerStore");
+    const { useGameStore } = await import("@/lib/store");
+    expect(useGameStore.getState().defeatedKeepers).not.toContain("water");
+
+    usePartnerStore.getState().startBattle({
+      keeperId: "water",
+      player: { atk: 60 },
+      partner: { atk: 60 },
+      enemy: { maxHp: 30, hp: 30, def: 0 },
+      rng,
+    });
+    usePartnerStore.getState().round("heavy_kick", "heavy_kick");
+
+    expect(usePartnerStore.getState().phase).toBe("victory");
+    expect(useGameStore.getState().defeatedKeepers).toContain("water");
+  });
+
   it("is a defeat only when both roosters fall", async () => {
     const { usePartnerStore } = await import("../partnerStore");
     usePartnerStore.getState().startBattle({

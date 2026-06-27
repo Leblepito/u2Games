@@ -9,6 +9,17 @@ describe("CHAPTERS data", () => {
     expect(LAST_CHAPTER_ID).toBe(CHAPTERS.length - 1);
   });
 
+  it("covers the full Season 1 arc (Ch0-12, Acts 1-4)", () => {
+    expect(CHAPTERS).toHaveLength(13);
+    expect(LAST_CHAPTER_ID).toBe(12);
+    expect(new Set(CHAPTERS.map((c) => c.act))).toEqual(new Set([1, 2, 3, 4]));
+  });
+
+  it("uses only engine-supported difficulties", () => {
+    const allowed = new Set(["easy", "normal", "hard"]);
+    for (const c of CHAPTERS) expect(allowed.has(c.boss.difficulty)).toBe(true);
+  });
+
   it("only unlocks moves the combat engine knows", () => {
     for (const c of CHAPTERS) {
       for (const move of c.unlocks) {

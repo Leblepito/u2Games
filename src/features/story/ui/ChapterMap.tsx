@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 
 import { useGameStore } from "@/lib/store";
 import { useCombatStore } from "@/features/combat";
+import { CloudSaveButton } from "@/features/account";
 import { CHAPTERS, chapterStatus } from "../lib/chapters";
 import type { Chapter, ChapterStatus } from "../lib/types";
 
@@ -27,6 +28,7 @@ function ChapterCard({ chapter }: { chapter: Chapter }): React.JSX.Element {
       difficulty: chapter.boss.difficulty,
       enemy: chapter.boss.fighter,
       chapterId: chapter.id,
+      unlocks: chapter.unlocks,
     });
     router.push("/battle");
   };
@@ -95,11 +97,14 @@ export function ChapterMap(): React.JSX.Element {
   return (
     <div className="min-h-screen bg-slate-950 px-4 py-8 text-white">
       <div className="mx-auto w-full max-w-2xl">
-        <header className="mb-6">
-          <h1 className="text-2xl font-bold text-amber-400">Campaign</h1>
-          <p className="text-sm text-slate-400">
-            The Crow of Freedom · {cleared}/{CHAPTERS.length} chapters cleared
-          </p>
+        <header className="mb-6 flex items-start justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-bold text-amber-400">Campaign</h1>
+            <p className="text-sm text-slate-400">
+              The Crow of Freedom · {cleared}/{CHAPTERS.length} chapters cleared
+            </p>
+          </div>
+          <CloudSaveButton />
         </header>
 
         <div className="flex flex-col gap-4">

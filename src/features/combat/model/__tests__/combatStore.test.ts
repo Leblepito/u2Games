@@ -152,4 +152,41 @@ describe("combatStore", () => {
     expect(useGameStore.getState().currentChapter).toBe(5);
     expect(useCombatStore.getState().notice).toBeNull();
   });
+
+  it("grants the chapter's move unlocks on a boss win", async () => {
+    const { useCombatStore } = await import("../combatStore");
+    const { useGameStore } = await import("@/lib/store");
+
+    useGameStore.getState().setChapter(1);
+    useCombatStore.getState().startBattle({
+      difficulty: "easy",
+      chapterId: 1,
+      unlocks: ["heavy_kick", "fury"],
+      ...ONE_SHOT,
+      rng,
+    });
+    useCombatStore.getState().playerAction("heavy_kick");
+
+    expect(useCombatStore.getState().phase).toBe("victory");
+    const moves = useGameStore.getState().unlockedMoves;
+    expect(moves).toContain("heavy_kick");
+    expect(moves).toContain("fury");
+  });
+});
+
+describe("gameStore unlockMoves", () => {
+  it("ships the starter moveset by default", async () => {
+    const { useGameStore } = await import("@/lib/store");
+    expect(useGameStore.getState().unlockedMoves).toEqual(
+      expect.arrayContaining(["peck", "wing_strike", "dodge"]),
+    );
+  });
+
+  it("adds moves without duplicating", async () => {
+    const { useGameStore } = await import("@/lib/store");
+    useGameStore.getState().unlockMoves(["heavy_kick", "heavy_kick"]);
+    useGameStore.getState().unlockMoves(["heavy_kick"]);
+    const heavy = useGameStore.getState().unlockedMoves.filter((m) => m === "heavy_kick");
+    expect(heavy).toHaveLength(1);
+  });
 });

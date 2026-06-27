@@ -11,6 +11,7 @@ import {
   startTurn,
 } from "../lib/combatEngine";
 import type { CombatPhase, Difficulty, Fighter, MoveId, Rng } from "../lib/types";
+import { MOVES } from "../lib/moves";
 import { entryCost, resolveVictoryReward, type RewardBreakdown } from "../lib/economy";
 import { combatMachine } from "./combatMachine";
 import { useGameStore } from "@/lib/store";
@@ -27,6 +28,8 @@ export interface StartBattleConfig {
    * advances the campaign (story-progress write).
    */
   chapterId?: number;
+  /** Moves granted to the player on a win (the chapter's unlocks). */
+  unlocks?: MoveId[];
   /** Override the player/enemy fighters (e.g. story bosses). */
   player?: Partial<Fighter>;
   enemy?: Partial<Fighter>;
@@ -42,6 +45,8 @@ interface CombatSlice {
   wager: number;
   /** Chapter this match resolves, or null for a free arena bout. */
   chapterId: number | null;
+  /** Moves to grant on a win. */
+  unlocks: MoveId[];
   player: Fighter;
   enemy: Fighter;
   log: string[];
@@ -110,6 +115,7 @@ export const useCombatStore = create<CombatSlice>((set, get) => {
     difficulty: "normal",
     wager: 0,
     chapterId: null,
+    unlocks: [],
     player: defaultPlayer(""),
     enemy: defaultEnemy(),
     log: [],
@@ -142,6 +148,7 @@ export const useCombatStore = create<CombatSlice>((set, get) => {
         difficulty,
         wager,
         chapterId: config.chapterId ?? null,
+        unlocks: config.unlocks ?? [],
         reward: null,
         notice: null,
         log: [
@@ -170,10 +177,16 @@ export const useCombatStore = create<CombatSlice>((set, get) => {
         game.addXP(reward.xp);
         log.push(`${pOut.defender.name} is defeated! +${reward.coins} RC, +${reward.xp} XP.`);
 
-        // Story-progress write: clearing the current chapter's boss advances it.
+        // Story-progress write: clearing the current chapter's boss advances it
+        // and grants that chapter's move unlocks.
         let notice: string | null = null;
         if (state.chapterId !== null && state.chapterId === game.currentChapter) {
           game.setChapter(state.chapterId + 1);
+          if (state.unlocks.length > 0) {
+            game.unlockMoves(state.unlocks);
+            const names = state.unlocks.map((id) => MOVES[id].name).join(", ");
+            log.push(`Unlocked: ${names}.`);
+          }
           notice = `Chapter ${state.chapterId} cleared.`;
           log.push(notice);
         }
@@ -213,6 +226,7 @@ export const useCombatStore = create<CombatSlice>((set, get) => {
         notice: null,
         wager: 0,
         chapterId: null,
+        unlocks: [],
         turn: 0,
       });
     },

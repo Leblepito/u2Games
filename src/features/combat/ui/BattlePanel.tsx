@@ -60,6 +60,7 @@ export function BattlePanel(): React.JSX.Element {
   const playerAction = useCombatStore((s) => s.playerAction);
   const reset = useCombatStore((s) => s.reset);
   const playerName = useGameStore((s) => s.playerName);
+  const unlockedMoves = useGameStore((s) => s.unlockedMoves);
 
   const [wager, setWager] = useState(0);
 
@@ -129,7 +130,8 @@ export function BattlePanel(): React.JSX.Element {
             <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
               {MOVE_IDS.map((id) => {
                 const move = MOVES[id];
-                const usable = canAct && canUseMove(player, id);
+                const unlocked = unlockedMoves.includes(id);
+                const usable = unlocked && canAct && canUseMove(player, id);
                 return (
                   <button
                     key={id}
@@ -138,9 +140,13 @@ export function BattlePanel(): React.JSX.Element {
                     onClick={() => playerAction(id)}
                     className="rounded-lg border border-white/10 bg-slate-800 px-3 py-2 text-left text-sm hover:border-amber-400 disabled:cursor-not-allowed disabled:opacity-40"
                   >
-                    <div className="font-semibold">{move.name}</div>
+                    <div className="font-semibold">
+                      {unlocked ? move.name : `🔒 ${move.name}`}
+                    </div>
                     <div className="text-xs text-slate-400">
-                      {move.kind === "guard" ? "guard" : `${move.damageMultiplier}×`} · {move.staminaCost} stam
+                      {unlocked
+                        ? `${move.kind === "guard" ? "guard" : `${move.damageMultiplier}×`} · ${move.staminaCost} stam`
+                        : "locked — clear a chapter"}
                     </div>
                   </button>
                 );

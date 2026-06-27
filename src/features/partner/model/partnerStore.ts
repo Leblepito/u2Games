@@ -37,6 +37,8 @@ export interface StartPartnerBattleConfig {
   player?: Partial<Fighter>;
   partner?: Partial<Fighter>;
   enemy?: Partial<Fighter>;
+  /** Koh Sawan Keeper this fight resolves — marked defeated on a win. */
+  keeperId?: string;
   rng?: Rng;
 }
 
@@ -51,6 +53,8 @@ interface PartnerSlice {
   sync: number;
   /** Consecutive coordinated turns. */
   streak: number;
+  /** Keeper this battle resolves, or null for a free bout. */
+  keeperId: string | null;
   log: string[];
   reward: PartnerReward | null;
   startBattle: (config?: StartPartnerBattleConfig) => void;
@@ -166,6 +170,11 @@ export const usePartnerStore = create<PartnerSlice>((set, get) => {
     game.addCoins(reward.coins);
     game.addXP(reward.xp);
     log.push(`${enemy.name} is defeated! +${reward.coins} RC, +${reward.xp} XP.`);
+    const { keeperId } = get();
+    if (keeperId) {
+      game.defeatKeeper(keeperId);
+      log.push(`${enemy.name} yields. The zone is cleared.`);
+    }
     actor.send({ type: "WIN" });
     set({ player, partner, enemy, sync, log, reward: { coins: reward.coins, xp: reward.xp } });
   }
@@ -183,6 +192,7 @@ export const usePartnerStore = create<PartnerSlice>((set, get) => {
     enemy: defaultEnemy(),
     sync: 0,
     streak: 0,
+    keeperId: null,
     log: [],
     reward: null,
 
@@ -202,6 +212,7 @@ export const usePartnerStore = create<PartnerSlice>((set, get) => {
         difficulty,
         sync: 0,
         streak: 0,
+        keeperId: config.keeperId ?? null,
         reward: null,
         log: [`The Keeper stirs — ${player.name} & ${partner.name} vs ${enemy.name}!`],
       });
@@ -332,6 +343,7 @@ export const usePartnerStore = create<PartnerSlice>((set, get) => {
         enemy: defaultEnemy(),
         sync: 0,
         streak: 0,
+        keeperId: null,
         log: [],
         reward: null,
         turn: 0,

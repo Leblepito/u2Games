@@ -22,10 +22,10 @@ export default function Home() {
           📖 Campaign
         </Link>
         <Link
-          href="/partner"
+          href="/island"
           className="px-8 py-4 rounded-2xl border border-white/15 text-white font-bold text-lg hover:border-sky-400 transition-all"
         >
-          ❄️ Partner Battle
+          🏝️ Koh Sawan
         </Link>
       </div>
     </main>

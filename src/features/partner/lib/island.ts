@@ -7,7 +7,7 @@
  * partner battle (see partnerStore).
  */
 
-import type { Difficulty, Fighter } from "@/features/combat";
+import type { Difficulty, Fighter, MoveId } from "@/features/combat";
 
 export type KeeperId = "water" | "earth" | "fire" | "wind" | "spirit";
 
@@ -91,4 +91,43 @@ export function keeperStatus(id: KeeperId, defeated: readonly string[]): KeeperS
   if (defeated.includes(id)) return "defeated";
   const firstOpen = KEEPERS.find((k) => !defeated.includes(k.id));
   return firstOpen?.id === id ? "active" : "locked";
+}
+
+export interface AttackContext {
+  /** The move used (for normal attacks). Omitted for sync strikes. */
+  moveId?: MoveId;
+  /** True when the damage comes from a partner sync strike. */
+  isSync: boolean;
+}
+
+/**
+ * Per-Keeper damage rule (lom-system.md "Keeper Requirements") — each
+ * philosophy becomes a constraint on how it can be hurt:
+ * - **spirit** ("impossible alone"): normal hits chip 1; only sync strikes land.
+ * - **earth** ("sustained pressure"): every hit is capped — bursts/sync don't help, chip it down.
+ * - **fire** ("cold composure"): rage (Fury) is punished to half.
+ * - **wind** ("sense & read") / **water** ("flow with it"): raw hits are softened;
+ *   coordinated sync strikes land in full.
+ *
+ * Returns the damage actually dealt to the Keeper.
+ */
+export function keeperResist(
+  keeperId: string | null | undefined,
+  rawDamage: number,
+  ctx: AttackContext,
+): number {
+  switch (keeperId) {
+    case "spirit":
+      return ctx.isSync ? rawDamage : Math.min(rawDamage, 1);
+    case "earth":
+      return Math.min(rawDamage, 25);
+    case "fire":
+      return ctx.moveId === "fury" ? Math.floor(rawDamage * 0.5) : rawDamage;
+    case "wind":
+      return ctx.isSync ? rawDamage : Math.floor(rawDamage * 0.6);
+    case "water":
+      return ctx.isSync ? rawDamage : Math.floor(rawDamage * 0.7);
+    default:
+      return rawDamage;
+  }
 }

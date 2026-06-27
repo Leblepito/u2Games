@@ -114,6 +114,28 @@ describe("partnerStore", () => {
     expect(useGameStore.getState().roosterCoins).toBe(coinsBefore + 100);
   });
 
+  it("the Spirit Keeper resists normal hits but takes full sync damage", async () => {
+    const { usePartnerStore } = await import("../partnerStore");
+    usePartnerStore.getState().startBattle({
+      keeperId: "spirit",
+      player: { lom: "water", maxHp: 50, hp: 50, atk: 30 },
+      partner: { lom: "water", atk: 30 },
+      enemy: { maxHp: 9999, def: 0, atk: 5, lom: "water" },
+      rng,
+    });
+
+    const start = usePartnerStore.getState().enemy.hp;
+    usePartnerStore.getState().round("peck", "peck"); // each ally chipped to 1
+    expect(start - usePartnerStore.getState().enemy.hp).toBe(2);
+
+    // Coordinate to 50 sync (build off coordination, not damage), then combo.
+    usePartnerStore.getState().round("peck", "peck");
+    usePartnerStore.getState().round("peck", "peck");
+    const beforeCombo = usePartnerStore.getState().enemy.hp;
+    usePartnerStore.getState().syncStrike();
+    expect(beforeCombo - usePartnerStore.getState().enemy.hp).toBeGreaterThanOrEqual(70);
+  });
+
   it("records a Keeper defeat on the island when the fight is won", async () => {
     const { usePartnerStore } = await import("../partnerStore");
     const { useGameStore } = await import("@/lib/store");

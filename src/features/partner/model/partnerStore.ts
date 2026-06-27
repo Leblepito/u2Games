@@ -25,6 +25,7 @@ import {
   partnerLomMultiplier,
   recordCoordination,
 } from "../lib/lom";
+import { keeperResist } from "../lib/island";
 
 export interface PartnerReward {
   coins: number;
@@ -224,27 +225,35 @@ export const usePartnerStore = create<PartnerSlice>((set, get) => {
 
       const log = [...state.log];
 
+      // An ally's hit, with the Keeper's resistance applied to the damage.
+      const strike = (attacker: Fighter, foe: Fighter, move: MoveId): { foe: Fighter; attacker: Fighter } => {
+        const out = applyMove(startTurn(attacker), foe, move, rng);
+        // result.damage is the computed hit *before* clamping to the foe's HP —
+        // resist that, then clamp, so a lethal raw hit isn't shrunk below the kill.
+        const raw = out.result.damage;
+        const adj = keeperResist(state.keeperId, raw, { moveId: move, isSync: false });
+        log.push(out.result.message);
+        if (raw > 0 && adj < raw) log.push(`The Keeper holds firm — only ${adj} lands.`);
+        return { foe: { ...out.defender, hp: Math.max(0, foe.hp - adj) }, attacker: out.attacker };
+      };
+
       // 1) Player acts if still standing.
       let enemy = state.enemy;
       let playerAfter = state.player;
       const playerActs = state.player.hp > 0;
       if (playerActs) {
-        const player = startTurn(state.player);
-        const pOut = applyMove(player, enemy, playerMove, rng);
-        log.push(pOut.result.message);
-        enemy = pOut.defender;
-        playerAfter = pOut.attacker;
+        const r = strike(state.player, enemy, playerMove);
+        enemy = r.foe;
+        playerAfter = r.attacker;
       }
 
       // 2) Partner acts if still standing.
       let partnerAfter = state.partner;
       const partnerActs = state.partner.hp > 0;
       if (partnerActs) {
-        const partner = startTurn(state.partner);
-        const ptOut = applyMove(partner, enemy, partnerMove, rng);
-        log.push(ptOut.result.message);
-        enemy = ptOut.defender;
-        partnerAfter = ptOut.attacker;
+        const r = strike(state.partner, enemy, partnerMove);
+        enemy = r.foe;
+        partnerAfter = r.attacker;
       }
 
       // 3) Sync from coordination (both allies attacking the same element).
@@ -308,10 +317,11 @@ export const usePartnerStore = create<PartnerSlice>((set, get) => {
       }
 
       const mult = partnerLomMultiplier(state.player.lom, state.enemy.lom, state.sync);
-      const dmg = Math.max(
+      const raw = Math.max(
         1,
         Math.floor((state.player.atk + state.partner.atk) * move.damageMultiplier * mult - state.enemy.def),
       );
+      const dmg = keeperResist(state.keeperId, raw, { isSync: true });
       const enemy = { ...state.enemy, hp: Math.max(0, state.enemy.hp - dmg) };
       const sync = Math.max(0, state.sync - move.requiredSync);
       log.push(`${move.name}! ${state.player.name} + ${state.partner.name} hit for ${dmg}. Sync ${sync}.`);

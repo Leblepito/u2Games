@@ -3,8 +3,8 @@
 > 3D turn-based RPG browser game. Raise fighting roosters, battle across Southeast Asia, earn coins through arena victories and quests.
 
 **Tech:** Next.js 15 · React Three Fiber 9 · Three.js · Zustand · XState · Tailwind CSS · Radix UI · Howler.js  
-**Backend:** FastAPI (Railway) · PostgreSQL (Supabase) · Meshy.ai (3D assets)  
-**Deploy:** Vercel (frontend) · Railway (backend)
+**Backend:** Next.js API routes (`src/app/api/**`) · PostgreSQL (Supabase) · Meshy.ai (3D assets)  
+**Deploy:** Railway (Next.js app + API routes) · Supabase (database)
 
 ---
 
@@ -99,8 +99,7 @@ git worktree add ../rv-3d -b agent/3d-assets main
 
 | Service | Platform | URL |
 |---------|----------|-----|
-| Frontend | Vercel | `u2games.vercel.app` |
-| Backend API | Railway | `api.u2games.app` |
+| App + API | Railway | `u2games.up.railway.app` |
 | Database | Supabase | managed |
 | 3D Assets | Meshy.ai → CDN | `/public/models/` |
 

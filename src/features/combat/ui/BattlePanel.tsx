@@ -1,10 +1,27 @@
 "use client";
 
+import { useState } from "react";
+
 import { useGameStore } from "@/lib/store";
 import { canUseMove } from "../lib/combatEngine";
+import { HARD_MODE_ENTRY_FEE } from "../lib/economy";
 import { MOVES, MOVE_IDS } from "../lib/moves";
-import type { Fighter } from "../lib/types";
+import type { Difficulty, Fighter } from "../lib/types";
 import { useCombatStore } from "../model/combatStore";
+
+function WalletHud(): React.JSX.Element {
+  const coins = useGameStore((s) => s.roosterCoins);
+  const level = useGameStore((s) => s.level);
+  const xp = useGameStore((s) => s.xp);
+  return (
+    <div className="flex items-center gap-3 text-sm">
+      <span className="font-semibold text-amber-300">{coins} RC</span>
+      <span className="text-slate-500">·</span>
+      <span className="text-slate-300">Lv {level}</span>
+      <span className="text-xs text-slate-500">{xp} XP</span>
+    </div>
+  );
+}
 
 function HealthBar({ fighter, accent }: { fighter: Fighter; accent: string }): React.JSX.Element {
   const hpPct = Math.max(0, Math.round((fighter.hp / fighter.maxHp) * 100));
@@ -38,39 +55,69 @@ export function BattlePanel(): React.JSX.Element {
   const enemy = useCombatStore((s) => s.enemy);
   const log = useCombatStore((s) => s.log);
   const reward = useCombatStore((s) => s.reward);
+  const notice = useCombatStore((s) => s.notice);
   const startBattle = useCombatStore((s) => s.startBattle);
   const playerAction = useCombatStore((s) => s.playerAction);
   const reset = useCombatStore((s) => s.reset);
   const playerName = useGameStore((s) => s.playerName);
 
+  const [wager, setWager] = useState(0);
+
   const isOver = phase === "victory" || phase === "defeat";
   const canAct = phase === "playerTurn";
+  const netCoins = reward ? reward.payout - reward.wager : 0;
 
   return (
     <div className="min-h-screen bg-slate-950 px-4 py-8 text-white">
       <div className="mx-auto w-full max-w-2xl">
         <header className="mb-4 flex items-center justify-between">
           <h1 className="text-2xl font-bold text-amber-400">Arena</h1>
-          {phase !== "idle" && (
-            <span className="text-sm text-slate-400">Turn {turn}</span>
-          )}
+          <div className="flex items-center gap-4">
+            <WalletHud />
+            {phase !== "idle" && (
+              <span className="text-sm text-slate-400">Turn {turn}</span>
+            )}
+          </div>
         </header>
 
         {phase === "idle" ? (
           <div className="rounded-2xl border border-white/10 bg-slate-900/80 p-6 text-center">
-            <p className="text-slate-300">Face the Old Crow in a training match.</p>
+            <p className="text-slate-300">
+              Face the Old Crow. Stake RoosterCoin to double it — or fight for the flat prize.
+            </p>
+
+            <label className="mt-5 flex items-center justify-center gap-2 text-sm text-slate-300">
+              Wager
+              <input
+                type="number"
+                min={0}
+                step={10}
+                value={wager}
+                onChange={(e) => setWager(Math.max(0, Math.floor(Number(e.target.value) || 0)))}
+                className="w-24 rounded-lg border border-white/10 bg-slate-800 px-3 py-1.5 text-right text-white"
+              />
+              RC
+            </label>
+
             <div className="mt-5 flex flex-wrap justify-center gap-3">
-              {(["easy", "normal", "hard"] as const).map((d) => (
+              {(["easy", "normal", "hard"] as const).map((d: Difficulty) => (
                 <button
                   key={d}
                   type="button"
-                  onClick={() => startBattle({ playerName, difficulty: d })}
+                  onClick={() => startBattle({ playerName, difficulty: d, wager })}
                   className="rounded-lg bg-amber-500 px-5 py-2 font-semibold capitalize text-slate-950 hover:bg-amber-400"
                 >
                   {d}
+                  {d === "hard" && (
+                    <span className="ml-1 text-xs font-normal text-slate-700">
+                      +{HARD_MODE_ENTRY_FEE} fee
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
+
+            {notice && <p className="mt-4 text-sm text-red-400">{notice}</p>}
           </div>
         ) : (
           <>
@@ -114,9 +161,19 @@ export function BattlePanel(): React.JSX.Element {
                   {phase === "victory" ? "Victory!" : "Defeat"}
                 </p>
                 {reward && phase === "victory" && (
-                  <p className="mt-1 text-sm text-emerald-400">
-                    +{reward.coins} RoosterCoin · +{reward.xp} XP
-                  </p>
+                  <>
+                    <p className="mt-1 text-sm text-emerald-400">
+                      +{reward.coins} RoosterCoin · +{reward.xp} XP
+                    </p>
+                    {reward.wager > 0 && (
+                      <p className="mt-0.5 text-xs text-slate-400">
+                        Stake {reward.wager} → {reward.payout} back (net{" "}
+                        {netCoins >= 0 ? "+" : ""}
+                        {netCoins} RC)
+                      </p>
+                    )}
+                    {notice && <p className="mt-1 text-xs text-amber-300">{notice}</p>}
+                  </>
                 )}
                 <button
                   type="button"

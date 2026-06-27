@@ -8,12 +8,20 @@ export default function Home() {
         Raise legendary roosters. Battle across Southeast Asia.
         Discover ancient secrets. Earn your freedom.
       </p>
-      <Link
-        href="/play"
-        className="px-8 py-4 rounded-2xl bg-gradient-to-r from-amber-500 to-red-600 text-white font-bold text-lg hover:brightness-110 transition-all"
-      >
-        🐓 Enter the Arena
-      </Link>
+      <div className="flex flex-wrap items-center justify-center gap-4">
+        <Link
+          href="/play"
+          className="px-8 py-4 rounded-2xl bg-gradient-to-r from-amber-500 to-red-600 text-white font-bold text-lg hover:brightness-110 transition-all"
+        >
+          🐓 Enter the Arena
+        </Link>
+        <Link
+          href="/campaign"
+          className="px-8 py-4 rounded-2xl border border-white/15 text-white font-bold text-lg hover:border-amber-400 transition-all"
+        >
+          📖 Campaign
+        </Link>
+      </div>
     </main>
   );
 }

@@ -6,6 +6,7 @@ import { createActor } from "xstate";
 import {
   applyMove,
   chooseEnemyMove,
+  counterDamage,
   createFighter,
   isDefeated,
   startTurn,
@@ -165,20 +166,14 @@ export const useCombatStore = create<CombatSlice>((set, get) => {
 
       const log = [...state.log];
 
-      // 1) Player upkeep + move.
-      const player = startTurn(state.player);
-      const pOut = applyMove(player, state.enemy, moveId, rng);
-      log.push(pOut.result.message);
-
-      if (isDefeated(pOut.defender)) {
+      // Bank the win: rewards, chapter progress + unlocks, and the WIN event.
+      const concludeVictory = (playerFighter: Fighter, enemyFighter: Fighter): void => {
         const reward = resolveVictoryReward(state.difficulty, state.wager);
         const game = useGameStore.getState();
         game.addCoins(reward.coins);
         game.addXP(reward.xp);
-        log.push(`${pOut.defender.name} is defeated! +${reward.coins} RC, +${reward.xp} XP.`);
+        log.push(`${enemyFighter.name} is defeated! +${reward.coins} RC, +${reward.xp} XP.`);
 
-        // Story-progress write: clearing the current chapter's boss advances it
-        // and grants that chapter's move unlocks.
         let notice: string | null = null;
         if (state.chapterId !== null && state.chapterId === game.currentChapter) {
           game.setChapter(state.chapterId + 1);
@@ -192,7 +187,16 @@ export const useCombatStore = create<CombatSlice>((set, get) => {
         }
 
         actor.send({ type: "WIN" });
-        set({ player: pOut.attacker, enemy: pOut.defender, log, reward, notice });
+        set({ player: playerFighter, enemy: enemyFighter, log, reward, notice });
+      };
+
+      // 1) Player upkeep + move.
+      const player = startTurn(state.player);
+      const pOut = applyMove(player, state.enemy, moveId, rng);
+      log.push(pOut.result.message);
+
+      if (isDefeated(pOut.defender)) {
+        concludeVictory(pOut.attacker, pOut.defender);
         return;
       }
 
@@ -204,16 +208,31 @@ export const useCombatStore = create<CombatSlice>((set, get) => {
       const eOut = applyMove(enemy, pOut.attacker, enemyMove, rng);
       log.push(eOut.result.message);
 
-      if (isDefeated(eOut.defender)) {
-        log.push(`${eOut.defender.name} has fallen. Defeat.`);
+      let enemyFighter = eOut.attacker;
+      let playerFighter = eOut.defender;
+
+      if (isDefeated(playerFighter)) {
+        log.push(`${playerFighter.name} has fallen. Defeat.`);
         if (state.wager > 0) log.push(`Wager of ${state.wager} RC forfeited.`);
         actor.send({ type: "LOSE" });
-        set({ player: eOut.defender, enemy: eOut.attacker, log });
+        set({ player: playerFighter, enemy: enemyFighter, log });
         return;
       }
 
+      // 3) Counter: if the player braced and the enemy landed an attack, reflect.
+      if (playerFighter.countering && eOut.result.hit && MOVES[enemyMove].kind === "attack") {
+        const dmg = counterDamage(playerFighter, enemyFighter);
+        enemyFighter = { ...enemyFighter, hp: Math.max(0, enemyFighter.hp - dmg) };
+        playerFighter = { ...playerFighter, countering: false };
+        log.push(`${playerFighter.name} counters for ${dmg}!`);
+        if (isDefeated(enemyFighter)) {
+          concludeVictory(playerFighter, enemyFighter);
+          return;
+        }
+      }
+
       actor.send({ type: "ENEMY_ACTED" });
-      set({ player: eOut.defender, enemy: eOut.attacker, log });
+      set({ player: playerFighter, enemy: enemyFighter, log });
     },
 
     reset: () => {

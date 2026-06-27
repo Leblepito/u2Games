@@ -45,6 +45,8 @@ const DEFAULT_FIGHTER: Omit<Fighter, "id" | "name"> = {
   lom: "spirit",
   cooldowns: {},
   buffModifier: 0,
+  damageReduction: 0,
+  countering: false,
 };
 
 export function createFighter(
@@ -86,6 +88,8 @@ export function startTurn(fighter: Fighter): Fighter {
     stamina: Math.min(fighter.maxStamina, fighter.stamina + STAMINA_REGEN),
     cooldowns,
     buffModifier: 0,
+    damageReduction: 0,
+    countering: false,
   };
 }
 
@@ -106,7 +110,8 @@ export function computeDamage(
   rng: Rng,
 ): DamageRoll {
   const move = MOVES[moveId];
-  if (move.kind === "guard" || move.damageMultiplier === 0) {
+  // Only attack moves deal immediate damage; guard/heal/counter never do.
+  if (move.kind !== "attack" || move.damageMultiplier === 0) {
     return { hit: true, critical: false, damage: 0 };
   }
 
@@ -117,6 +122,11 @@ export function computeDamage(
   const elementBonus = lomMultiplier(attacker.lom, defender.lom);
   const defense = defender.def * (1 + defender.buffModifier);
   let finalDamage = Math.max(1, Math.floor(base * elementBonus - defense));
+
+  // Shield: flat reduction of the next incoming hit.
+  if (defender.damageReduction > 0) {
+    finalDamage = Math.max(1, Math.floor(finalDamage * (1 - defender.damageReduction)));
+  }
 
   const critical = rng() < CRIT_CHANCE;
   if (critical) finalDamage = Math.floor(finalDamage * CRIT_MULTIPLIER);
@@ -133,9 +143,12 @@ export interface MoveOutcome {
 /**
  * Resolve a single move. Returns new immutable fighter states plus a log entry.
  * - Attack moves spend stamina, set cooldown, and damage the defender (whose
- *   one-shot guard buff is consumed).
- * - Guard moves spend stamina, set cooldown, and brace the attacker (DEF up
- *   for the next incoming hit) — the defender is untouched.
+ *   one-shot guard buff / shield is consumed).
+ * - Guard moves brace the attacker (DEF up and/or next-hit reduction).
+ * - Heal restores a fraction of the attacker's max HP.
+ * - Counter braces the attacker to reflect the next incoming attack (resolved
+ *   by the caller, who knows whether the opponent then attacks).
+ * Non-attack moves leave the defender untouched.
  */
 export function applyMove(
   attacker: Fighter,
@@ -146,19 +159,32 @@ export function applyMove(
   const move = MOVES[moveId];
   const roll = computeDamage(attacker, defender, moveId, rng);
 
+  const healAmount =
+    move.kind === "heal" ? Math.floor(attacker.maxHp * (move.healPercent ?? 0)) : 0;
+
   const nextAttacker: Fighter = {
     ...attacker,
+    hp: Math.min(attacker.maxHp, attacker.hp + healAmount),
     stamina: Math.max(0, attacker.stamina - move.staminaCost),
     cooldowns: { ...attacker.cooldowns, [moveId]: move.cooldown },
     buffModifier:
       move.kind === "guard" ? (move.guardBuff ?? 0) : attacker.buffModifier,
+    damageReduction:
+      move.kind === "guard" ? (move.block ?? 0) : attacker.damageReduction,
+    countering: move.kind === "counter" ? true : attacker.countering,
   };
 
   let nextDefender = defender;
   let message: string;
 
-  if (move.kind === "guard") {
-    message = `${attacker.name} uses ${move.name} — DEF up for the next hit.`;
+  if (move.kind === "heal") {
+    message = `${attacker.name} uses ${move.name}, recovering ${healAmount} HP.`;
+  } else if (move.kind === "counter") {
+    message = `${attacker.name} uses ${move.name}, bracing to counter.`;
+  } else if (move.kind === "guard") {
+    message = move.block
+      ? `${attacker.name} raises a ${move.name} — next hit reduced.`
+      : `${attacker.name} uses ${move.name} — DEF up for the next hit.`;
   } else if (!roll.hit) {
     message = `${attacker.name} uses ${move.name} but misses!`;
   } else {
@@ -166,6 +192,7 @@ export function applyMove(
       ...defender,
       hp: Math.max(0, defender.hp - roll.damage),
       buffModifier: 0, // brace consumed by this hit
+      damageReduction: 0, // shield consumed by this hit
     };
     message = roll.critical
       ? `${attacker.name} lands a CRITICAL ${move.name} for ${roll.damage}!`
@@ -187,10 +214,32 @@ export function applyMove(
   };
 }
 
+/**
+ * Reflected damage when a braced fighter (Counter) is hit by an attack. Uses
+ * the counter move's multiplier against the attacker's ATK/DEF/lom.
+ */
+export function counterDamage(counterer: Fighter, attacker: Fighter): number {
+  const base = counterer.atk * MOVES.counter.damageMultiplier;
+  const bonus = lomMultiplier(counterer.lom, attacker.lom);
+  return Math.max(1, Math.floor(base * bonus - attacker.def));
+}
+
+/** Moves the enemy AI is allowed to use — the classic S1 set. The advanced
+ * unlockables (counter/heal/shield) are player-progression tools and would
+ * need reactive handling the simple AI doesn't model, so bosses skip them. */
+const AI_MOVE_IDS: readonly MoveId[] = [
+  "peck",
+  "wing_strike",
+  "heavy_kick",
+  "dodge",
+  "taunt",
+  "fury",
+];
+
 /** Expected damage of an attack move, used by the AI to rank options. */
 function expectedDamage(self: Fighter, opponent: Fighter, moveId: MoveId): number {
   const move = MOVES[moveId];
-  if (move.kind === "guard") return 0;
+  if (move.kind !== "attack") return 0;
   const base = self.atk * move.damageMultiplier;
   const bonus = lomMultiplier(self.lom, opponent.lom);
   const raw = base * bonus - opponent.def * (1 + opponent.buffModifier);
@@ -211,7 +260,7 @@ export function chooseEnemyMove(
   difficulty: Difficulty,
   rng: Rng,
 ): MoveId {
-  const options = availableMoves(self);
+  const options = availableMoves(self).filter((id) => AI_MOVE_IDS.includes(id));
   if (options.length === 0) return "peck"; // regen guarantees this is affordable next turn
   if (options.length === 1) return options[0];
 

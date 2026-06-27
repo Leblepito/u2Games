@@ -6,6 +6,7 @@ import {
   canUseMove,
   chooseEnemyMove,
   computeDamage,
+  counterDamage,
   createFighter,
   isDefeated,
   lomMultiplier,
@@ -151,6 +152,60 @@ describe("applyMove", () => {
     const out = applyMove(attacker, braced, "peck", seqRng([0.0, 0.99]));
     expect(out.result.damage).toBe(1);
     expect(out.defender.buffModifier).toBe(0); // consumed
+  });
+});
+
+describe("advanced moves (heal / shield / counter)", () => {
+  it("heal restores a fraction of max HP and leaves the defender alone", () => {
+    const a = fighter({ id: "a", name: "A", hp: 50, maxHp: 100, stamina: 100 });
+    const d = fighter({ id: "d", name: "D", hp: 100 });
+    const out = applyMove(a, d, "heal", seqRng([0]));
+    expect(out.attacker.hp).toBe(70); // 50 + 20% of 100
+    expect(out.attacker.stamina).toBe(70); // 100 - 30
+    expect(out.defender.hp).toBe(100);
+    expect(out.result.damage).toBe(0);
+  });
+
+  it("heal never overheals past max HP", () => {
+    const a = fighter({ hp: 95, maxHp: 100 });
+    expect(applyMove(a, fighter(), "heal", seqRng([0])).attacker.hp).toBe(100);
+  });
+
+  it("shield braces the attacker with a damage reduction", () => {
+    const out = applyMove(fighter({ id: "a", name: "A" }), fighter({ id: "d", name: "D" }), "shield", seqRng([0]));
+    expect(out.attacker.damageReduction).toBe(0.5);
+    expect(out.attacker.buffModifier).toBe(0);
+    expect(out.result.damage).toBe(0);
+  });
+
+  it("damageReduction halves the next incoming hit", () => {
+    // peck base 12 - 8 def = 4, then *0.5 shield = 2
+    const shielded = fighter({ damageReduction: 0.5 });
+    const roll = computeDamage(fighter(), shielded, "peck", seqRng([0.0, 0.99]));
+    expect(roll.damage).toBe(2);
+  });
+
+  it("counter braces the attacker (no immediate damage)", () => {
+    const out = applyMove(fighter({ id: "a", name: "A" }), fighter({ id: "d", name: "D", hp: 100 }), "counter", seqRng([0]));
+    expect(out.attacker.countering).toBe(true);
+    expect(out.defender.hp).toBe(100);
+    expect(out.result.damage).toBe(0);
+  });
+
+  it("counterDamage reflects 1.2x ATK minus the attacker's DEF", () => {
+    // 20 * 1.2 = 24, - 8 def = 16
+    expect(counterDamage(fighter({ atk: 20 }), fighter({ def: 8 }))).toBe(16);
+  });
+
+  it("the enemy AI never picks the advanced unlockable moves", () => {
+    const rich = fighter({ id: "e", name: "E", stamina: 100 });
+    const opp = fighter({ id: "p", name: "P", stamina: 100 });
+    for (const diff of ["easy", "normal", "hard"] as const) {
+      for (let r = 0; r < 1; r += 0.05) {
+        const move = chooseEnemyMove(rich, opp, diff, seqRng([r, r]));
+        expect(["counter", "heal", "shield"]).not.toContain(move);
+      }
+    }
   });
 });
 

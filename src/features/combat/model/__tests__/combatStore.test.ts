@@ -172,6 +172,25 @@ describe("combatStore", () => {
     expect(moves).toContain("heavy_kick");
     expect(moves).toContain("fury");
   });
+
+  it("reflects an enemy attack with Counter and can win on the riposte", async () => {
+    const { useCombatStore } = await import("../combatStore");
+    // Player braces; the enemy's attack lands non-lethally, then the counter
+    // (40 * 1.2 = 48) reflects and KOs the 20-HP enemy.
+    useCombatStore.getState().startBattle({
+      difficulty: "normal",
+      player: { atk: 40, def: 0, maxHp: 100, hp: 100 },
+      enemy: { atk: 10, def: 0, maxHp: 20, hp: 20 },
+      rng,
+    });
+
+    useCombatStore.getState().playerAction("counter");
+
+    const state = useCombatStore.getState();
+    expect(state.phase).toBe("victory");
+    expect(state.enemy.hp).toBe(0);
+    expect(state.log.some((l) => l.includes("counters for"))).toBe(true);
+  });
 });
 
 describe("gameStore unlockMoves", () => {
